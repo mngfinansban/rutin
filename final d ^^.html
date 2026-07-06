@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Kürasyon ve Yönetim Sistemi v6</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,500;0,600;1,400&display=swap');
+
+        :root {
+            --bg-color: #F8F6F2;
+            --card-bg: #FFFFFF;
+            --text-main: #2A2D2B;
+            --text-muted: #828A82;
+            --accent-green: #5B6E58;
+            --accent-green-light: #EFF3EF;
+            --border-color: #E6E3DC;
+            --vizon: #8A8174;
+            --vizon-light: #F2EFE9;
+            --danger: #C06C5C;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --anim-speed: 0.2s;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        body { background-color: var(--bg-color); color: var(--text-main); display: flex; justify-content: center; min-height: 100vh; padding-bottom: 100px; }
+        
+        .app-container { width: 100%; max-width: 480px; background: var(--card-bg); min-height: 100vh; padding: 24px 20px; display: flex; flex-direction: column; gap: 24px; position: relative; box-shadow: 0 4px 30px rgba(0,0,0,0.01); }
+        
+        h1, h2, .brand-font { font-family: 'Playfair Display', serif; font-weight: 600; }
+        h1 { font-size: 26px; letter-spacing: -0.5px; color: var(--text-main); }
+        h2 { font-size: 15px; color: var(--vizon); margin-bottom: 12px; font-weight: 500; }
+        
+        .nav-bar { position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%); width: calc(100% - 32px); max-width: 448px; background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(20px); border: 1px solid rgba(230,227,220,0.7); border-radius: 20px; display: flex; justify-content: space-around; padding: 10px 0; z-index: 1000; box-shadow: 0 8px 32px rgba(91,110,88,0.06); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; color: var(--text-muted); font-size: 10px; font-weight: 500; flex: 1; text-align: center; transition: all var(--anim-speed) cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-item.active { color: var(--accent-green); font-weight: 600; transform: translateY(-2px); }
+        .nav-icon { font-size: 18px; opacity: 0.8; }
+
+        .app-page { display: none; opacity: 0; transform: translateY(12px); transition: opacity 0.3s ease, transform 0.3s ease; flex-direction: column; gap: 22px; }
+        .app-page.active { display: flex; opacity: 1; transform: translateY(0); }
+
+        .card { background: #FCFAF7; border-radius: var(--radius-lg); padding: 18px; border: 1px solid var(--border-color); position: relative; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        
+        .btn-prime { padding: 10px 18px; background: var(--accent-green); color: white; border: none; border-radius: var(--radius-md); font-size: 13px; font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.2s; border: 1px solid transparent; }
+        .btn-prime:active { transform: scale(0.97); background: #4e5e4b; }
+        .btn-secondary { padding: 6px 14px; background: var(--vizon-light); color: var(--vizon); border: 1px solid transparent; border-radius: 8px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+        .btn-secondary.active { background: var(--accent-green); color: white; }
+        
+        select, input, textarea { padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: #FFF; font-size: 13px; width: 100%; color: var(--text-main); outline: none; transition: border 0.2s; }
+        select:focus, input:focus, textarea:focus { border-color: var(--accent-green); }
+
+        .progress-container { width: 100%; height: 5px; background: var(--border-color); border-radius: 3px; margin-top: 6px; overflow: hidden; }
+        .progress-bar { height: 100%; background: var(--accent-green); width: 0%; transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+
+        .timeline-wrapper { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+        .timeline { display: flex; gap: 8px; overflow-x: auto; flex: 1; padding: 4px 0; }
+        .timeline::-webkit-scrollbar { display: none; }
+        .time-day { min-width: 54px; padding: 10px 0; background: #FCFAF7; border-radius: var(--radius-md); text-align: center; cursor: pointer; border: 1px solid var(--border-color); font-size: 12px; transition: all 0.2s; }
+        .time-day.active { background: var(--accent-green); color: white; border-color: var(--accent-green); box-shadow: 0 4px 12px rgba(91,110,88,0.15); }
+        .day-name { font-size: 9px; opacity: 0.7; font-weight: 600; text-transform: uppercase; }
+        .day-num { font-size: 15px; font-weight: 600; margin-top: 2px; }
+
+        .accordion { border: 1px solid var(--border-color); border-radius: var(--radius-lg); overflow: hidden; background: var(--card-bg); margin-bottom: 10px; }
+        .accordion-header { background: #FCFAF7; padding: 14px 18px; cursor: pointer; font-weight: 500; font-size: 13.5px; display: flex; justify-content: space-between; align-items: center; }
+        .accordion-content { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; padding: 0 18px; background: var(--card-bg); }
+        .accordion.open .accordion-content { max-height: 1200px; padding: 14px 18px; }
+
+        .sub-task { display: flex; align-items: center; padding: 10px 0; cursor: pointer; font-size: 13px; border-bottom: 1px solid #FAF9F6; }
+        .sub-checkbox { width: 18px; height: 18px; border: 1px solid var(--vizon); border-radius: 5px; margin-right: 12px; display: flex; align-items: center; justify-content: center; background: #FFF; transition: all 0.15s; flex-shrink: 0; }
+        .sub-task.done .sub-checkbox { background: var(--accent-green); border-color: var(--accent-green); }
+        .sub-task.done .sub-checkbox::after { content: "✓"; color: white; font-size: 11px; font-weight: bold; }
+        .sub-task.done { color: var(--text-muted); text-decoration: line-through; }
+
+        .set-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; background: #FFF; padding: 8px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .set-move-btn { background: none; border: none; cursor: pointer; font-size: 11px; color: var(--vizon); }
+        .set-row input { padding: 6px; font-size: 12px; text-align: center; border-radius: 6px; border: 1px solid var(--border-color); width: 50px; }
+        .btn-del { background: transparent; border: none; color: var(--danger); cursor: pointer; font-size: 18px; }
+
+        .context-menu-trigger { background: transparent; border: none; font-weight: bold; font-size: 18px; color: var(--vizon); cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+        .context-menu-panel { display: none; position: absolute; top: 40px; right: 18px; background: white; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); z-index: 100; min-width: 110px; }
+        .context-menu-panel button { width: 100%; text-align: left; background: none; border: none; padding: 8px 12px; font-size: 12px; cursor: pointer; color: var(--danger); }
+
+        .basket-grid { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; background: #FCFAF7; padding: 10px 14px; border-radius: var(--radius-md); margin-bottom: 8px; font-size: 13px; border: 1px solid var(--border-color); }
+        .w-btn { width: 28px; height: 28px; border-radius: 50%; border: 1px solid var(--border-color); background: #FFF; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+
+        canvas { width: 100% !important; height: 130px !important; display: block; }
+        .chart-wrapper { width: 100%; background: #FFF; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 12px; margin-top: 8px; }
+        .filter-row { display: flex; gap: 4px; justify-content: flex-end; margin-bottom: 8px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    
+    <div id="page-routines" class="app-page active">
+        <div class="flex-between">
+            <div>
+                <h1 id="dateHeader" class="brand-font">Yükleniyor...</h1>
+                <div style="display:flex; align-items:center; gap:8px; margin-top: 4px;">
+                    <p style="font-size: 12px; color: var(--text-muted);" id="daySubtext">...</p>
+                    <input type="date" id="directDatePicker" onchange="jumpToDirectDate(this.value)" style="width:24px; height:20px; padding:0; border:none; background:transparent; cursor:pointer;">
+                </div>
+            </div>
+            <div style="text-align: right; min-width: 90px;">
+                <div style="font-size: 22px; font-weight: 600; color: var(--accent-green);" id="globalProgress">0%</div>
+                <div class="progress-container"><div class="progress-bar" id="globalProgressBar"></div></div>
+            </div>
+        </div>
+
+        <div class="timeline-wrapper">
+            <button class="btn-secondary" onclick="shiftTimeline(-3)" style="padding:6px 10px;">◀</button>
+            <div class="timeline" id="timelineUI"></div>
+            <button class="btn-secondary" onclick="shiftTimeline(3)" style="padding:6px 10px;">▶</button>
+        </div>
+
+        <div>
+            <h2>Yapılandırma Zinciri</h2>
+            <div id="accordionContainer"></div>
+        </div>
+
+        <div class="card" style="background: white;">
+            <h2>🎯 O Güne Özel Görevler</h2>
+            <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                <input type="text" id="customTaskInput" placeholder="Örn: Thomas Calculus Ekstra Sorular">
+                <button class="btn-prime" onclick="addCustomTask()">Ekle</button>
+            </div>
+            <div id="customTasksContainer"></div>
+        </div>
+
+        <div class="card flex-between" style="background: var(--accent-green-light); border-color: rgba(91,110,88,0.12);">
+            <div>
+                <span style="font-size: 13px; font-weight: 500; color: var(--accent-green);">Ödem & Hidrasyon Sayacı</span>
+                <p style="font-size: 11px; color: var(--text-muted);">Hedef: 4.0 Litre</p>
+            </div>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="w-btn" onclick="modifyWater(-0.25)">-</button>
+                <span style="font-weight: 600; font-size: 14px; min-width: 50px; text-align: center;" id="waterDisplay">0.00 L</span>
+                <button class="w-btn" onclick="modifyWater(0.25)">+</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-workout" class="app-page">
+        <div class="flex-between">
+            <div>
+                <h1 id="workoutDayTitle" style="font-size:22px;">Antrenman Programı</h1>
+                <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Hipertrofi ve Doğrusal Aşırı Yüklenme</p>
+            </div>
+            <button class="btn-prime" onclick="addNewExerciseToProgram()" style="font-size:12px; padding:8px 12px;">+ Hareket</button>
+        </div>
+
+        <div class="card" style="background: var(--vizon-light); border-color: transparent;">
+            <span style="font-size: 11px; font-weight: 600; color: var(--vizon); display: block; margin-bottom: 6px; letter-spacing: 0.3px;">🛡️ PROGRAMA ÖZGÜ ISINMA PROTOKOLÜ</span>
+            <div id="dynamicWarmupList"></div>
+        </div>
+
+        <div class="card" style="text-align: center; background: #FCFAF7; padding: 14px; border-style: dashed;">
+            <div style="display:flex; justify-content:center; align-items:center; gap:10px;">
+                <div style="font-size: 26px; font-weight: 600; color: var(--accent-green); font-family: monospace;" id="restTimerDisplay">01:30</div>
+                <input type="number" id="restDurationInput" value="90" style="width: 52px; padding: 4px; text-align: center; font-size:12px;" onchange="updateRestTimerDisplay()">
+                <span style="font-size:11px; color:var(--text-muted);">sn</span>
+            </div>
+            <button class="btn-prime" id="timerControlBtn" onclick="toggleRestTimer()" style="margin-top: 8px; padding: 4px 16px; font-size: 11px; border-radius: 6px;">Süreyi Başlat</button>
+        </div>
+
+        <div id="exerciseListContainer" style="display:flex; flex-direction:column; gap:14px;"></div>
+
+        <div class="card" style="background: white;">
+            <h2>🏃 Antrenman Sonu Kardiyo Protokolü</h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+                <input type="number" id="cardioMinInput" placeholder="Süre (Dakika)" min="0" oninput="saveCardioFinisher()">
+                <input type="text" id="cardioTypeInput" placeholder="Tür (Örn: Eğimli Yürüyüş)" oninput="saveCardioFinisher()">
+            </div>
+        </div>
+    </div>
+
+    <div id="page-deepwork" class="app-page">
+        <div>
+            <h1>Ders Çalışma & Odak Yönetimi</h1>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Zaman Blokları ve Odak Kronometresi</p>
+        </div>
+
+        <div class="card" style="background: white; display: flex; flex-direction: column; gap: 14px;">
+            <div>
+                <label style="font-size: 12px; font-weight: 500; color: var(--vizon); display:block; margin-bottom: 6px;">Aktif Çalışma Konusu</label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="dwTopicSelect" style="flex: 1;"></select>
+                    <button class="btn-secondary" onclick="editSelectedTopic()">✏️</button>
+                    <button class="btn-secondary" onclick="deleteSelectedTopic()" style="color:var(--danger)">🗑️</button>
+                    <button class="btn-prime" onclick="addNewTopicPrompt()">+</button>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 8px; padding: 10px 0;">
+                <div style="font-size: 42px; font-weight: 500; margin-bottom: 8px; font-family: monospace;" id="dwMainDisplay">25:00</div>
+                
+                <div style="display:flex; justify-content:center; gap:8px; margin-bottom: 14px;">
+                    <button class="btn-secondary active" id="modeBtnCountdown" onclick="setDWMode('countdown')">Sayaç</button>
+                    <button class="btn-secondary" id="modeBtnStopwatch" onclick="setDWMode('stopwatch')">Kronometre</button>
+                </div>
+
+                <div id="countdownConfigArea" style="margin-bottom: 14px;">
+                    <input type="number" id="dwCustomMinutes" value="25" style="width: 65px; text-align: center; padding: 6px;" min="1">
+                    <span style="font-size: 12px; color: var(--text-muted); margin-left: 4px;">Dakika</span>
+                </div>
+
+                <div style="display: flex; gap: 8px; justify-content: center;">
+                    <button class="btn-prime" id="dwMasterBtn" onclick="triggerDeepWorkMaster()" style="width: 140px;">Odağı Başlat</button>
+                    <button class="btn-secondary" onclick="resetDeepWorkEngine()">Sıfırla</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="page-nutrition" class="app-page">
+        <div>
+            <h1>Beslenme ve Kalori Sepeti</h1>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">Günlük Net Enerji Takibi</p>
+        </div>
+
+        <div class="card" style="background: white;">
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 10px;">
+                <input type="text" id="nutItemName" placeholder="Besin (Örn: Yulaf Ezmesi)">
+                <input type="number" id="nutItemCal" placeholder="kcal" min="0">
+            </div>
+            <button class="btn-prime" onclick="addFoodToBasket()" style="width: 100%;">Sepete Kaydet</button>
+        </div>
+
+        <div>
+            <div class="flex-between" style="margin-bottom: 10px;">
+                <h2>Bugünkü Besin Tüketimi</h2>
+                <div style="font-size: 15px; font-weight: 600; color: var(--accent-green);">Toplam: <span id="totalCalDisplay">0</span> kcal</div>
+            </div>
+            <div id="foodBasketContainer"></div>
+        </div>
+    </div>
+
+    <div id="page-analytics" class="app-page">
+        <div class="flex-between">
+            <h1>Metrik Analiz Laboratuvarı</h1>
+            <button class="btn-secondary" onclick="toggleGlobalChartType()" id="globalChartTypeBtn" style="font-size:11px;">Tür: Çizgi</button>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open'); setTimeout(renderWeightChart, 100);">⚖️ Vücut Ağırlığı Geçmişi</div>
+            <div class="accordion-content">
+                <div class="filter-row">
+                    <button class="btn-secondary" id="f-weight-7" onclick="setChartFilter('weight', 7)">1H</button>
+                    <button class="btn-secondary" id="f-weight-30" onclick="setChartFilter('weight', 30)">1A</button>
+                    <button class="btn-secondary" id="f-weight-90" onclick="setChartFilter('weight', 90)">3A</button>
+                    <button class="btn-secondary" id="f-weight-all" onclick="setChartFilter('weight', 'all')">Hepsi</button>
+                </div>
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <input type="number" step="0.1" id="weightInput" placeholder="Kilo (kg)" min="0">
+                    <button class="btn-prime" onclick="submitWeightLog()">Kaydet</button>
+                </div>
+                <div class="chart-wrapper"><canvas id="chartWeight"></canvas></div>
+                <div id="weightLogHistoryList" style="margin-top: 10px; max-height: 120px; overflow-y: auto;"></div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open'); setTimeout(renderCalorieChart, 100);">🍎 Günlük Kalori Takip Grafiği</div>
+            <div class="accordion-content">
+                <div class="filter-row">
+                    <button class="btn-secondary" id="f-cal-7" onclick="setChartFilter('cal', 7)">1H</button>
+                    <button class="btn-secondary" id="f-cal-30" onclick="setChartFilter('cal', 30)">1A</button>
+                    <button class="btn-secondary" id="f-cal-90" onclick="setChartFilter('cal', 90)">3A</button>
+                    <button class="btn-secondary" id="f-cal-all" onclick="setChartFilter('cal', 'all')">Hepsi</button>
+                </div>
+                <div class="chart-wrapper"><canvas id="chartCalorie"></canvas></div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open'); setTimeout(renderExercisePerformanceChart, 100);">🏋️‍♂️ Antrenman Analiz Sekmesi (Hacim)</div>
+            <div class="accordion-content">
+                <select id="exerciseChartSelect" onchange="renderExercisePerformanceChart()" style="margin-bottom:8px;"></select>
+                <div class="filter-row">
+                    <button class="btn-secondary" id="f-ex-7" onclick="setChartFilter('ex', 7)">1H</button>
+                    <button class="btn-secondary" id="f-ex-30" onclick="setChartFilter('ex', 30)">1A</button>
+                    <button class="btn-secondary" id="f-ex-90" onclick="setChartFilter('ex', 90)">3A</button>
+                    <button class="btn-secondary" id="f-ex-all" onclick="setChartFilter('ex', 'all')">Hepsi</button>
+                </div>
+                <div class="chart-wrapper"><canvas id="chartExercise"></canvas></div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open'); setTimeout(renderCardioChart, 100);">🏃 Kardiyo Takip Grafiği (Dakika)</div>
+            <div class="accordion-content">
+                <div class="filter-row">
+                    <button class="btn-secondary" id="f-cardio-7" onclick="setChartFilter('cardio', 7)">1H</button>
+                    <button class="btn-secondary" id="f-cardio-30" onclick="setChartFilter('cardio', 30)">1A</button>
+                    <button class="btn-secondary" id="f-cardio-90" onclick="setChartFilter('cardio', 90)">3A</button>
+                    <button class="btn-secondary" id="f-cardio-all" onclick="setChartFilter('cardio', 'all')">Hepsi</button>
+                </div>
+                <div class="chart-wrapper"><canvas id="chartCardio"></canvas></div>
+            </div>
+        </div>
+
+        <div class="accordion">
+            <div class="accordion-header" onclick="this.parentElement.classList.toggle('open'); setTimeout(renderDeepWorkCharts, 100);">🌳 Ders Çalışma & Kümülatif Akış</div>
+            <div class="accordion-content">
+                <select id="dwChartTopicSelect" onchange="renderDeepWorkCharts()" style="margin-bottom:8px;"></select>
+                <div class="filter-row">
+                    <button class="btn-secondary" id="f-dw-7" onclick="setChartFilter('dw', 7)">1H</button>
+                    <button class="btn-secondary" id="f-dw-30" onclick="setChartFilter('dw', 30)">1A</button>
+                    <button class="btn-secondary" id="f-dw-90" onclick="setChartFilter('dw', 90)">3A</button>
+                    <button class="btn-secondary" id="f-dw-all" onclick="setChartFilter('dw', 'all')">Hepsi</button>
+                </div>
+                <div class="chart-wrapper" style="margin-bottom:10px;"><canvas id="chartDWDistribution"></canvas></div>
+                <div class="chart-wrapper"><canvas id="chartDWCumulative"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="switchTab('page-routines', this)"><span class="nav-icon">🗓️</span><span>Rutinler</span></div>
+        <div class="nav-item" onclick="switchTab('page-workout', this)"><span class="nav-icon">🏋️‍♂️</span><span>Spora Git</span></div>
+        <div class="nav-item" onclick="switchTab('page-deepwork', this)"><span class="nav-icon">🌳</span><span>Ders</span></div>
+        <div class="nav-item" onclick="switchTab('page-nutrition', this)"><span class="nav-icon">🍎</span><span>Beslenme</span></div>
+        <div class="nav-item" onclick="switchTab('page-analytics', this)"><span class="nav-icon">📈</span><span>Analizler</span></div>
+    </div>
+
+</div>
+
+<script>
+    // Diş Bakımı ve 5 Başlıklı Haftalık Dinamik Saç Rutini Motoru
+    function getDynamicRoutineDatabase(wDay) {
+        let hairStepsSabah = [];
+        let hairStepsAkşam = [];
+
+        // Günlük dinamik saç bakımı eşleştirmesi
+        if (wDay === 1 || wDay === 3) { // Pazartesi ve Çarşamba (Yıkama Günü)
+            hairStepsSabah = [
+                "Saç Koruma Notu: Geceden beri korunan saten yastık kılıfı sayesinde saç nemini kaybetmedi."
+            ];
+            hairStepsAkşam = [
+                "Hafif Şampuan (OGX): Sadece saç derisine masaj yaparak köpürt ve ılık suyla durula.",
+                "Saç Kremi (Duş): Suyu elinle sık, kulaktan aşağı yedir. Tarakla duşta nazikçe aç, 2 dk beklet, durula.",
+                "Serum (Argan Yağı): Havluyla tampon hareketlerle nemi alınmış saça 2-3 damla Argan Yağı yedir.",
+                "Duş Sonrası Krem (Şekillendirici): Elidor Yeşil Krem'den fındık kadar al, aşağıdan yukarıya sıkarak (scrunch) şekillendir ve uzaktan kurut."
+            ];
+        } else if (wDay === 2 || wDay === 4 || wDay === 5 || wDay === 0) { // Salı, Perşembe, Cuma, Pazar (Canlandırma Günü)
+            hairStepsSabah = [
+                "Saçı bir fısfıs veya ıslak elle hafifçe nemlendir (Dünkü ürünleri aktive eder).",
+                "Geniş dişli tarakla saç düğümlerini kırmadan nazikçe aç.",
+                "Elidor Pembe Krem'den nohut tanesi kadar al, üst tellerdeki kabarmaları yatıştır."
+            ];
+            hairStepsAkşam = [
+                "Saç Derisi Masajı: Kan sirkülasyonu ve saç kökü aktivasyonu için parmak uçlarıyla dairesel masaj."
+            ];
+        } else if (wDay === 6) { // Cumartesi (Detoks Günü)
+            hairStepsSabah = [
+                "Saç Koruma Notu: Saten yastık kılıfı elektriklenme koruması kontrolü."
+            ];
+            hairStepsAkşam = [
+                "Detoks Adım 1 (Arındırma): Head & Shoulders şampuanla saç derisini kireç ve ürün birikintilerinden tamamen sıfırla.",
+                "Detoks Adım 2 (Yoğun Nem): Kurumayı önlemek için saç kremini normalden daha bol tut, tara ve duşta 3-4 dakika bekletip durula.",
+                "Detoks Adım 3 (Koruma): Çıkınca havluyla nemi al ve doğrudan Argan Yağı sür (İsteğe bağlı: Bugün kremsiz dinlendir)."
+            ];
+        }
+
+        return {
+            "🌅 Sabah Yapılandırması & Cilt-Ağız-Saç": [
+                "Aç Karnına Sabah Tartısı [Analiz İçin Güne Doğru Başla]",
+                "Ağız Hijyeni: Dil Sıyırıcı ile Dil Temizliği & Ağız Çalkalama",
+                "Diş Bakımı: Doğru Teknikle Fırçalama & Diş İpi Kullanımı",
+                "Cilt Temizliği: Yüz temizleme jeli ile arındırma (Purest Solutions Yıkama Jeli)",
+                "Cilt Nemlendirme: Hafif nemlendirici losyon uygulaması (Maruderm Nemlendirici)",
+                "UV Kalkanı: Güneş kremi sürülmesi (The Purest Solutions SPF50)",
+                ...hairStepsSabah
+            ],
+            "🧍 Postür & Omurga Mimarisi": [
+                "Lunge Stretch (Kalça fleksör kaslarını açma - 2 Dk)",
+                "Glute Bridge (Glute aktivasyonu ve kalça uyandırma - 3 Set x 15 Tekrar)",
+                "Karın kemer stabilizasyonu için standart Plank"
+            ],
+            "🌌 Akşam Kapanış & Saç-Ağız-Cilt Protokolü": [
+                "Cilt Temizliği: Gözenek arındırma amaçlı yıkama seansı (Purest Solutions Yıkama Jeli)",
+                "Cilt Bakımı: Leke ve yenileme serumu uygulaması (The Purest Solutions Serum)",
+                "Hücre Yenileme: Yoğun gece nemlendiricisi (Maruderm)",
+                "Diş Bakımı: Detaylı Gece Diş Fırçalama & Arayüz Fırçası/İpi Kullanımı",
+                ...hairStepsAkşam,
+                "Günün beslenme dürüstlüğü kontrolü (Sıfır paketli gıda)"
+            ]
+        };
+    }
+
+    let defaultWorkouts = {
+        1: ["Incline Dumbbell Press", "Chest Fly Machine", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Overhead Triceps Extension"],
+        4: ["Incline Dumbbell Press", "Chest Fly Machine", "Dumbbell Lateral Raise", "Cable Lateral Raise", "Overhead Triceps Extension"],
+        2: ["Lat Pulldown", "Seated Cable Row", "Reverse Pec Deck Fly", "Barbell Biceps Curl", "Hammer Curl"],
+        5: ["Lat Pulldown", "Seated Cable Row", "Reverse Pec Deck Fly", "Barbell Biceps Curl", "Hammer Curl"],
+        3: ["Romanian Deadlift (RDL)", "Leg Press", "Leg Extension", "Seated Leg Curl", "Standing Calf Raise"],
+        6: ["Romanian Deadlift (RDL)", "Leg Press", "Leg Extension", "Seated Leg Curl", "Standing Calf Raise"],
+        0: []
+    };
+
+    const trDays = ["PAZ", "PZT", "SAL", "ÇAR", "PER", "CUM", "CMT"];
+    const trMonths = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+
+    let activeDate = new Date();
+    let dbState = JSON.parse(localStorage.getItem('kuras_db_v6')) || {
+        dates: {},
+        weight_logs: [],
+        dw_topics: ["Calculus", "Python", "SQL"],
+        dw_logs: [],
+        global_chart_type: "line",
+        workout_templates: JSON.parse(JSON.stringify(defaultWorkouts))
+    };
+
+    let chartFilters = { weight: 7, cal: 7, ex: 7, cardio: 7, dw: 7 };
+
+    let restTimerObj = null; let restSeconds = 90;
+    let dwTimerObj = null; let dwMode = "countdown"; let dwSeconds = 1500; let dwIsRunning = false;
+
+    window.onload = function() {
+        buildTimeline();
+        populateTopicDropdowns();
+        loadCurrentDateData();
+        applyFilterVisuals();
+        document.addEventListener('click', () => {
+            document.querySelectorAll('.context-menu-panel').forEach(p => p.style.display = 'none');
+        });
+    };
+
+    function getFormattedKey(d) { return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+
+    function switchTab(pageId, navElement) {
+        document.querySelectorAll('.app-page').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        const targetPage = document.getElementById(pageId);
+        targetPage.style.display = 'flex';
+        setTimeout(() => targetPage.classList.add('active'), 10);
+        navElement.classList.add('active');
+    }
+
+    function shiftTimeline(days) {
+        activeDate.setDate(activeDate.getDate() + days);
+        buildTimeline();
+        loadCurrentDateData();
+    }
+
+    function jumpToDirectDate(val) {
+        if(!val) return;
+        activeDate = new Date(val);
+        buildTimeline();
+        loadCurrentDateData();
+    }
+
+    function buildTimeline() {
+        const tl = document.getElementById('timelineUI'); tl.innerHTML = '';
+        for (let i = -3; i <= 3; i++) {
+            let loopDate = new Date(activeDate); loopDate.setDate(loopDate.getDate() + i);
+            const isMatch = loopDate.toDateString() === activeDate.toDateString();
+            let dayBox = document.createElement('div');
+            dayBox.className = `time-day ${isMatch ? 'active' : ''}`;
+            dayBox.onclick = () => { activeDate = loopDate; buildTimeline(); loadCurrentDateData(); };
+            dayBox.innerHTML = `<div class="day-name">${trDays[loopDate.getDay()]}</div><div class="day-num">${loopDate.getDate()}</div>`;
+            tl.appendChild(dayBox);
+        }
+    }
+
+    function loadCurrentDateData() {
+        const key = getFormattedKey(activeDate);
+        const wDay = activeDate.getDay();
+
+        document.getElementById('dateHeader').innerText = `${activeDate.getDate()} ${trMonths[activeDate.getMonth()]} ${activeDate.getFullYear()}`;
+        document.getElementById('daySubtext').innerText = trDays[wDay];
+
+        if (!dbState.dates[key]) {
+            dbState.dates[key] = { subTasks: {}, customTasks: [], water: 0.0, foods: [], exercises: {}, cardio: {min:'', type:''}, warmups: {} };
+        }
+        if (!dbState.dates[key].warmups) dbState.dates[key].warmups = {};
+
+        document.getElementById('waterDisplay').innerText = `${(dbState.dates[key].water || 0).toFixed(2)} L`;
+        
+        buildRoutinesAccordion(key, wDay);
+        buildCustomTasks(key);
+        buildWorkoutSection(key, wDay);
+        renderFoodBasket(key);
+        updateProgressMetrics(key);
+    }
+
+    function buildRoutinesAccordion(key, wDay) {
+        const container = document.getElementById('accordionContainer'); container.innerHTML = '';
+        // Seçilen güne göre dinamik veritabanını çağırıyoruz
+        let activeCategories = getDynamicRoutineDatabase(wDay);
+
+        Object.keys(activeCategories).forEach((catName, idx) => {
+            let accDiv = document.createElement('div');
+            accDiv.className = `accordion`;
+            let header = document.createElement('div');
+            header.className = 'accordion-header';
+            header.innerHTML = `<span>${catName}</span><span>▾</span>`;
+            header.onclick = () => accDiv.classList.toggle('open');
+
+            let content = document.createElement('div');
+            content.className = 'accordion-content';
+
+            activeCategories[catName].forEach(subText => {
+                if (dbState.dates[key].subTasks[subText] === undefined) dbState.dates[key].subTasks[subText] = false;
+                let isDone = dbState.dates[key].subTasks[subText];
+                let row = document.createElement('div');
+                row.className = `sub-task ${isDone ? 'done' : ''}`;
+                row.onclick = () => {
+                    dbState.dates[key].subTasks[subText] = !dbState.dates[key].subTasks[subText];
+                    row.classList.toggle('done');
+                    saveToLocalStorage();
+                    updateProgressMetrics(key);
+                };
+                row.innerHTML = `<div class="sub-checkbox"></div><div>${subText}</div>`;
+                content.appendChild(row);
+            });
+            accDiv.appendChild(header); accDiv.appendChild(content); container.appendChild(accDiv);
+        });
+    }
+
+    function buildCustomTasks(key) {
+        const container = document.getElementById('customTasksContainer'); container.innerHTML = '';
+        let tasks = dbState.dates[key].customTasks || [];
+        tasks.forEach((t, idx) => {
+            let row = document.createElement('div');
+            row.className = `sub-task ${t.done ? 'done' : ''}`;
+            row.innerHTML = `
+                <div class="sub-checkbox" onclick="toggleCustomTask(${idx})"></div>
+                <div style="flex:1;" onclick="toggleCustomTask(${idx})">${t.text}</div>
+                <button class="btn-del" onclick="deleteCustomTask(${idx})">×</button>
+            `;
+            container.appendChild(row);
+        });
+    }
+
+    function addCustomTask() {
+        const key = getFormattedKey(activeDate);
+        const inp = document.getElementById('customTaskInput');
+        if(!inp.value.trim()) return;
+        dbState.dates[key].customTasks.push({ text: inp.value.trim(), done: false });
+        inp.value = ''; saveToLocalStorage(); buildCustomTasks(key); updateProgressMetrics(key);
+    }
+    function toggleCustomTask(idx) {
+        const key = getFormattedKey(activeDate);
+        dbState.dates[key].customTasks[idx].done = !dbState.dates[key].customTasks[idx].done;
+        saveToLocalStorage(); buildCustomTasks(key); updateProgressMetrics(key);
+    }
+    function deleteCustomTask(idx) {
+        const key = getFormattedKey(activeDate);
+        dbState.dates[key].customTasks.splice(idx, 1);
+        saveToLocalStorage(); buildCustomTasks(key); updateProgressMetrics(key);
+    }
+
+    function updateProgressMetrics(key) {
+        let sub = dbState.dates[key]?.subTasks || {};
+        let cust = dbState.dates[key]?.customTasks || [];
+        let total = Object.keys(sub).length + cust.length;
+        if(total === 0) { document.getElementById('globalProgress').innerText = "0%"; document.getElementById('globalProgressBar').style.width = '0%'; return; }
+        let done = Object.values(sub).filter(v => v === true).length + cust.filter(c => c.done).length;
+        let pct = Math.round((done / total) * 100);
+        document.getElementById('globalProgress').innerText = `${pct}%`;
+        document.getElementById('globalProgressBar').style.width = `${pct}%`;
+    }
+
+    function modifyWater(amt) {
+        const key = getFormattedKey(activeDate);
+        dbState.dates[key].water = Math.max(0, (dbState.dates[key].water || 0) + amt);
+        document.getElementById('waterDisplay').innerText = `${dbState.dates[key].water.toFixed(2)} L`;
+        saveToLocalStorage();
+    }
+
+    function buildWorkoutSection(key, wDay) {
+        const programTitles = { 1: "İTİŞ (Push)", 4: "İTİŞ (Push)", 2: "ÇEKİŞ (Pull)", 5: "ÇEKİŞ (Pull)", 3: "BACAK & POSTÜR (Legs)", 6: "BACAK & POSTÜR (Legs)", 0: "Aktif Dinlenme Günü" };
+        document.getElementById('workoutDayTitle').innerText = programTitles[wDay] || "Dinlenme";
+        
+        const warmupContainer = document.getElementById('dynamicWarmupList');
+        let warmupItems = [];
+        if(wDay === 1 || wDay === 4) { warmupItems = ["Rotator Cuff Kablo Isınması (2 Set x 15)", "Scapular Protraksiyon Bant Çekişi"]; }
+        else if(wDay === 2 || wDay === 5) { warmupItems = ["Scapular Pull-Up (2 Set x 10)"]; }
+        else if(wDay === 3 || wDay === 6) { warmupItems = ["90/90 Kalça Esnetmesi (Her bacak 1 dk)"]; }
+
+        warmupContainer.innerHTML = '';
+        if (warmupItems.length === 0) {
+            warmupContainer.innerHTML = `<p style="font-size:12px; color: var(--text-muted);">Bugün kas dinlenme ve büyüme evresi.</p>`;
+        } else {
+            warmupItems.forEach(wuText => {
+                if (dbState.dates[key].warmups[wuText] === undefined) dbState.dates[key].warmups[wuText] = false;
+                let isWuDone = dbState.dates[key].warmups[wuText];
+                let row = document.createElement('div');
+                row.className = `sub-task ${isWuDone ? 'done' : ''}`;
+                row.style.borderBottom = "none";
+                row.onclick = () => {
+                    dbState.dates[key].warmups[wuText] = !dbState.dates[key].warmups[wuText];
+                    row.classList.toggle('done'); saveToLocalStorage();
+                };
+                row.innerHTML = `<div class="sub-checkbox"></div><div style="font-size:12px;">${wuText}</div>`;
+                warmupContainer.appendChild(row);
+            });
+        }
+
+        const container = document.getElementById('exerciseListContainer'); container.innerHTML = '';
+        let exList = dbState.workout_templates[wDay] || [];
+        if(exList.length === 0) return;
+
+        exList.forEach((exName, exIdx) => {
+            if(!dbState.dates[key].exercises[exName]) {
+                let prevSets = findLastSetsForExercise(exName) || [{ type: 'Ana Set', w: '', r: '' }];
+                dbState.dates[key].exercises[exName] = { sets: prevSets, note: '' };
+            }
+            let exData = dbState.dates[key].exercises[exName];
+
+            let card = document.createElement('div');
+            card.className = 'card'; card.style.background = 'white';
+            card.innerHTML = `
+                <div class="flex-between" style="position:relative; margin-bottom:4px;">
+                    <input type="text" value="${exName}" style="font-weight:600; font-size:14px; border:none; background:transparent; padding:0; color:var(--accent-green); width:80%;" onchange="renameExercise(${wDay}, ${exIdx}, this.value)">
+                    <button class="context-menu-trigger" onclick="event.stopPropagation(); toggleContextMenuPanel(${exIdx})">...</button>
+                    <div class="context-menu-panel" id="context-panel-${exIdx}" onclick="event.stopPropagation()">
+                        <button onclick="removeExerciseFromTemplate(${wDay}, ${exIdx})">Hareketi Sil</button>
+                    </div>
+                </div>
+                <div id="sets-area-${exName.replace(/\s+/g, '')}"></div>
+                <div style="display:flex; gap:8px; margin-top:10px; margin-bottom:12px;">
+                    <button class="btn-secondary" style="font-size:10px; padding:4px 8px;" onclick="addSetRow('${exName}', 'Isınma')">+ Isınma</button>
+                    <button class="btn-secondary" style="font-size:10px; padding:4px 8px;" onclick="addSetRow('${exName}', 'Ana Set')">+ Çalışma Seti</button>
+                </div>
+                <textarea placeholder="Form notu, dirsek açısı, insertion hissiyatı..." style="font-size:11px; padding:6px; height:45px; resize:none;" oninput="updateExerciseNote('${exName}', this.value)">${exData.note || ''}</textarea>
+            `;
+            container.appendChild(card);
+            renderExerciseSets(exName);
+        });
+
+        document.getElementById('cardioMinInput').value = dbState.dates[key].cardio?.min || '';
+        document.getElementById('cardioTypeInput').value = dbState.dates[key].cardio?.type || '';
+    }
+
+    function updateExerciseNote(exName, text) {
+        const key = getFormattedKey(activeDate);
+        dbState.dates[key].exercises[exName].note = text;
+        saveToLocalStorage();
+    }
+
+    function toggleContextMenuPanel(idx) {
+        document.querySelectorAll('.context-menu-panel').forEach(p => { if(p.id !== `context-panel-${idx}`) p.style.display = 'none'; });
+        const panel = document.getElementById(`context-panel-${idx}`);
+        panel.style.display = (panel.style.display === 'block') ? 'none' : 'block';
+    }
+
+    function findLastSetsForExercise(exName) {
+        let allKeys = Object.keys(dbState.dates).sort().reverse();
+        for(let k of allKeys) {
+            if(dbState.dates[k].exercises?.[exName]?.sets?.length > 0) {
+                return dbState.dates[k].exercises[exName].sets.map(s => ({type: s.type, w: '', r: ''}));
+            }
+        }
+        return null;
+    }
+
+    function findLastWeightForExerciseSet(exName, setIdx) {
+        let allKeys = Object.keys(dbState.dates).sort().reverse();
+        for(let k of allKeys) {
+            if(dbState.dates[k].exercises?.[exName]?.sets?.[setIdx]?.w) { return dbState.dates[k].exercises[exName].sets[setIdx].w; }
+        }
+        return null;
+    }
+
+    function renderExerciseSets(exName) {
+        const key = getFormattedKey(activeDate);
+        const area = document.getElementById(`sets-area-${exName.replace(/\s+/g, '')}`); area.innerHTML = '';
+        let sets = dbState.dates[key].exercises[exName].sets || [];
+        
+        sets.forEach((set, idx) => {
+            let lastW = findLastWeightForExerciseSet(exName, idx);
+            let historyLabel = lastW ? `Önceki: ${lastW}kg` : 'Önceki: --';
+            
+            let row = document.createElement('div');
+            row.className = 'set-row';
+            row.innerHTML = `
+                <div style="display:flex; flex-direction:column; gap:1px;">
+                    <button class="set-move-btn" onclick="moveSetOrder('${exName}', ${idx}, -1)">🔼</button>
+                    <button class="set-move-btn" onclick="moveSetOrder('${exName}', ${idx}, 1)">🔽</button>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-size:9px; color:var(--vizon); margin-bottom:2px; font-weight:600; text-transform:uppercase;">${set.type} (${historyLabel})</div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <input type="number" placeholder="kg" value="${set.w || ''}" min="0" style="width:60px;" oninput="updateSetVal('${exName}', ${idx}, 'w', this.value)">
+                        <span style="font-size:11px; color:var(--text-muted)">kg</span>
+                        <input type="number" placeholder="tekrar" value="${set.r || ''}" min="0" style="width:50px;" oninput="updateSetVal('${exName}', ${idx}, 'r', this.value)">
+                        <span style="font-size:11px; color:var(--text-muted)">tekrar</span>
+                    </div>
+                </div>
+                <button class="btn-del" onclick="deleteSetRow('${exName}', ${idx})">×</button>
+            `;
+            area.appendChild(row);
+        });
+    }
+
+    function moveSetOrder(exName, idx, direction) {
+        const key = getFormattedKey(activeDate);
+        let sets = dbState.dates[key].exercises[exName].sets; let target = idx + direction;
+        if(target < 0 || target >= sets.length) return;
+        let temp = sets[idx]; sets[idx] = sets[target]; sets[target] = temp;
+        saveToLocalStorage(); renderExerciseSets(exName);
+    }
+    function addSetRow(exName, type) {
+        const key = getFormattedKey(activeDate); dbState.dates[key].exercises[exName].sets.push({ type: type, w: '', r: '' });
+        saveToLocalStorage(); renderExerciseSets(exName);
+    }
+    function deleteSetRow(exName, idx) {
+        const key = getFormattedKey(activeDate); dbState.dates[key].exercises[exName].sets.splice(idx, 1);
+        saveToLocalStorage(); renderExerciseSets(exName);
+    }
+    function updateSetVal(exName, idx, field, val) {
+        const key = getFormattedKey(activeDate); dbState.dates[key].exercises[exName].sets[idx][field] = parseFloat(val) || val;
+        saveToLocalStorage();
+    }
+    function renameExercise(wDay, exIdx, newName) {
+        if(!newName.trim()) return; const key = getFormattedKey(activeDate); let oldName = dbState.workout_templates[wDay][exIdx];
+        dbState.workout_templates[wDay][exIdx] = newName.trim();
+        if(dbState.dates[key].exercises[oldName]) { dbState.dates[key].exercises[newName.trim()] = dbState.dates[key].exercises[oldName]; delete dbState.dates[key].exercises[oldName]; }
+        saveToLocalStorage(); loadCurrentDateData();
+    }
+    function addNewExerciseToProgram() {
+        const wDay = activeDate.getDay(); let name = prompt("Yeni hareket ismi:"); if(!name || !name.trim()) return;
+        dbState.workout_templates[wDay].push(name.trim()); saveToLocalStorage(); loadCurrentDateData();
+    }
+    function removeExerciseFromTemplate(wDay, exIdx) {
+        if(!confirm("Şablondan çıkarılsın mı?")) return; dbState.workout_templates[wDay].splice(exIdx, 1);
+        saveToLocalStorage(); loadCurrentDateData();
+    }
+    function saveCardioFinisher() {
+        const key = getFormattedKey(activeDate); dbState.dates[key].cardio.min = parseInt(document.getElementById('cardioMinInput').value) || '';
+        dbState.dates[key].cardio.type = document.getElementById('cardioTypeInput').value; saveToLocalStorage();
+    }
+    function updateRestTimerDisplay() {
+        let sec = parseInt(document.getElementById('restDurationInput').value) || 90;
+        document.getElementById('restTimerDisplay').innerText = `${Math.floor(sec/60).toString().padStart(2,'0')}:${(sec%60).toString().padStart(2,'0')}`;
+    }
+    function toggleRestTimer() {
+        const btn = document.getElementById('timerControlBtn'); if(restTimerObj) { clearInterval(restTimerObj); restTimerObj = null; btn.innerText = "Süreyi Başlat"; return; }
+        restSeconds = parseInt(document.getElementById('restDurationInput').value) || 90; btn.innerText = "Durdur";
+        restTimerObj = setInterval(() => {
+            restSeconds--;
+            document.getElementById('restTimerDisplay').innerText = `${Math.floor(restSeconds/60).toString().padStart(2,'0')}:${(restSeconds%60).toString().padStart(2,'0')}`;
+            if(restSeconds <= 0) { clearInterval(restTimerObj); restTimerObj = null; btn.innerText = "Süreyi Başlat"; updateRestTimerDisplay(); alert("Dinlenme bitti!"); }
+        }, 1000);
+    }
+
+    // Ders Yönetim Paneli
+    function populateTopicDropdowns() {
+        let sel1 = document.getElementById('dwTopicSelect'); let sel2 = document.getElementById('dwChartTopicSelect');
+        sel1.innerHTML = ''; sel2.innerHTML = '<option value="all">Bütün Çalışmalar</option>';
+        dbState.dw_topics.forEach(t => { sel1.innerHTML += `<option value="${t}">${t}</option>`; sel2.innerHTML += `<option value="${t}">${t}</option>`; });
+        populateExerciseChartDropdown();
+    }
+    function addNewTopicPrompt() {
+        let name = prompt("Yeni konu başlığı:"); if(!name || !name.trim()) return;
+        if(!dbState.dw_topics.includes(name.trim())) dbState.dw_topics.push(name.trim()); saveToLocalStorage(); populateTopicDropdowns();
+    }
+    function editSelectedTopic() {
+        let val = document.getElementById('dwTopicSelect').value; let idx = dbState.dw_topics.indexOf(val); if(idx === -1) return;
+        let newName = prompt("Düzenle:", val); if(!newName || !newName.trim()) return; dbState.dw_topics[idx] = newName.trim();
+        dbState.dw_logs.forEach(l => { if(l.topic === val) l.topic = newName.trim(); }); saveToLocalStorage(); populateTopicDropdowns();
+    }
+    function deleteSelectedTopic() {
+        let val = document.getElementById('dwTopicSelect').value; if(!confirm("Silinsin mi?")) return;
+        dbState.dw_topics = dbState.dw_topics.filter(t => t !== val); saveToLocalStorage(); populateTopicDropdowns();
+    }
+    function setDWMode(m) {
+        if(dwIsRunning) return; dwMode = m;
+        document.getElementById('modeBtnCountdown').classList.toggle('active', m === 'countdown');
+        document.getElementById('modeBtnStopwatch').classList.toggle('active', m === 'stopwatch');
+        document.getElementById('countdownConfigArea').style.display = (m === 'countdown') ? 'block' : 'none';
+        document.getElementById('dwMainDisplay').innerText = (m === 'countdown') ? `${document.getElementById('dwCustomMinutes').value}:00` : '00:00:00';
+    }
+    function triggerDeepWorkMaster() {
+        const btn = document.getElementById('dwMasterBtn');
+        if(dwIsRunning) {
+            clearInterval(dwTimerObj); dwTimerObj = null; dwIsRunning = false; btn.innerText = "Odağı Başlat";
+            let mins = (dwMode === 'countdown') ? Math.max(0, Math.round((parseInt(document.getElementById('dwCustomMinutes').value)*60 - dwSeconds)/60)) : Math.round(dwSeconds/60);
+            if(mins >= 1) { dbState.dw_logs.push({ date: getFormattedKey(new Date()), topic: document.getElementById('dwTopicSelect').value, minutes: mins, timestamp: Date.now() }); saveToLocalStorage(); }
+            resetDeepWorkEngine(); return;
+        }
+        dwIsRunning = true; btn.innerText = "Odağı Durdur";
+        dwSeconds = (dwMode === 'countdown') ? parseInt(document.getElementById('dwCustomMinutes').value)*60 : 0;
+        dwTimerObj = setInterval(() => {
+            if(dwMode === 'countdown') {
+                dwSeconds--;
+                if(dwSeconds <= 0) {
+                    clearInterval(dwTimerObj); dwTimerObj = null; dwIsRunning = false;
+                    dbState.dw_logs.push({ date: getFormattedKey(new Date()), topic: document.getElementById('dwTopicSelect').value, minutes: parseInt(document.getElementById('dwCustomMinutes').value), timestamp: Date.now() });
+                    saveToLocalStorage(); alert("Blok bitti!"); resetDeepWorkEngine(); return;
+                }
+                document.getElementById('dwMainDisplay').innerText = `${Math.floor(dwSeconds/60).toString().padStart(2,'0')}:${(dwSeconds%60).toString().padStart(2,'0')}`;
+            } else {
+                dwSeconds++;
+                let hrs = Math.floor(dwSeconds/3600).toString().padStart(2,'0');
+                let mins = Math.floor((dwSeconds%3600)/60).toString().padStart(2,'0');
+                let secs = (dwSeconds%60).toString().padStart(2,'0');
+                document.getElementById('dwMainDisplay').innerText = `${hrs}:${mins}:${secs}`;
+            }
+        }, 1000);
+    }
+    function resetDeepWorkEngine() { if(dwTimerObj) clearInterval(dwTimerObj); dwIsRunning = false; document.getElementById('dwMasterBtn').innerText = "Odağı Başlat"; setDWMode(dwMode); }
+
+    // Nutrition
+    function addFoodToBasket() {
+        const key = getFormattedKey(activeDate); const name = document.getElementById('nutItemName').value.trim(); const cal = parseInt(document.getElementById('nutItemCal').value);
+        if(!name || isNaN(cal)) return; dbState.dates[key].foods.push({ name: name, cal: cal, id: Date.now() });
+        saveToLocalStorage(); renderFoodBasket(key); document.getElementById('nutItemName').value = ''; document.getElementById('nutItemCal').value = '';
+    }
+    function deleteFood(id) { const key = getFormattedKey(activeDate); dbState.dates[key].foods = dbState.dates[key].foods.filter(f => f.id !== id); saveToLocalStorage(); renderFoodBasket(key); }
+    function renderFoodBasket(key) {
+        const container = document.getElementById('foodBasketContainer'); container.innerHTML = '';
+        let list = dbState.dates[key].foods || []; let sum = 0;
+        list.forEach(f => { sum += f.cal; let row = document.createElement('div'); row.className = 'basket-grid'; row.innerHTML = `<span><b>${f.name}</b> (${f.cal} kcal)</span><button class="btn-del" onclick="deleteFood(${f.id})">×</button>`; container.appendChild(row); });
+        document.getElementById('totalCalDisplay').innerText = sum;
+    }
+
+    // Grafik Zaman Filtreleme ve Çizim Motoru
+    function setChartFilter(type, days) {
+        chartFilters[type] = days;
+        applyFilterVisuals();
+        if(type === 'weight') renderWeightChart();
+        if(type === 'cal') renderCalorieChart();
+        if(type === 'ex') renderExercisePerformanceChart();
+        if(type === 'cardio') renderCardioChart();
+        if(type === 'dw') renderDeepWorkCharts();
+    }
+
+    function applyFilterVisuals() {
+        Object.keys(chartFilters).forEach(type => {
+            let val = chartFilters[type];
+            [7, 30, 90, 'all'].forEach(v => {
+                let el = document.getElementById(`f-${type}-${v}`);
+                if(el) el.classList.toggle('active', v === val);
+            });
+        });
+    }
+
+    function submitWeightLog() {
+        let val = parseFloat(document.getElementById('weightInput').value); if(!val) return;
+        dbState.weight_logs.push({ date: getFormattedKey(activeDate), weight: val, timestamp: Date.now() });
+        saveToLocalStorage(); renderWeightChart(); renderWeightHistoryList(); document.getElementById('weightInput').value = '';
+    }
+    function deleteWeightNode(idx) { dbState.weight_logs.splice(idx, 1); saveToLocalStorage(); renderWeightChart(); renderWeightHistoryList(); }
+    function renderWeightHistoryList() {
+        const container = document.getElementById('weightLogHistoryList'); container.innerHTML = '';
+        (dbState.weight_logs || []).slice().reverse().forEach((item, index) => {
+            let actualIdx = dbState.weight_logs.length - 1 - index;
+            container.innerHTML += `<div class="basket-grid"><span>📅 ${item.date} -> <b>${item.weight} kg</b></span><button class="btn-del" onclick="deleteWeightNode(${actualIdx})">×</button></div>`;
+        });
+    }
+    function populateExerciseChartDropdown() {
+        let sel = document.getElementById('exerciseChartSelect'); if(!sel) return; sel.innerHTML = '';
+        let unique = new Set(); Object.values(dbState.workout_templates).forEach(arr => arr.forEach(ex => unique.add(ex)));
+        unique.forEach(ex => { sel.innerHTML += `<option value="${ex}">${ex}</option>`; });
+    }
+    function toggleGlobalChartType() {
+        dbState.global_chart_type = (dbState.global_chart_type === 'line') ? 'bar' : 'line';
+        document.getElementById('globalChartTypeBtn').innerText = `Tür: ${dbState.global_chart_type === 'line' ? 'Çizgi' : 'Sütun'}`;
+        saveToLocalStorage(); renderAllActiveCharts();
+    }
+    function renderAllActiveCharts() { renderWeightChart(); renderCalorieChart(); renderExercisePerformanceChart(); renderCardioChart(); renderDeepWorkCharts(); }
+
+    function getCleanCtx(id) {
+        const c = document.getElementById(id); if(!c) return null; const ctx = c.getContext('2d'); ctx.clearRect(0,0,c.width,c.height);
+        c.width = c.clientWidth * 2; c.height = c.clientHeight * 2; ctx.scale(2,2); return { ctx, w: c.clientWidth, h: c.clientHeight };
+    }
+
+    function drawNativeChart(ctx, w, h, points, labels, type) {
+        if(!ctx) return;
+        if(points.length === 0) { ctx.fillStyle = "#828A82"; ctx.font = "11px sans-serif"; ctx.fillText("Kayıtlı veri bulunamadı.", w/2 - 55, h/2); return; }
+        let max = Math.max(...points) * 1.1 || 10; let min = Math.min(...points) * 0.9 || 0;
+        if(max === min) { max += 5; min -= 5; if(min<0) min=0; }
+        let range = max - min; let paddingLeft = 25, paddingRight = 10, paddingTop = 15, paddingBottom = 15;
+        let gW = w - paddingLeft - paddingRight, gH = h - paddingTop - paddingBottom;
+
+        ctx.strokeStyle = "#E6E3DC"; ctx.lineWidth = 0.5;
+        for(let i=0; i<=2; i++) {
+            let y = paddingTop + (gH/2)*i; ctx.beginPath(); ctx.moveTo(paddingLeft, y); ctx.lineTo(w-paddingRight, y); ctx.stroke();
+            ctx.fillStyle = "#828A82"; ctx.font = "7px sans-serif"; ctx.fillText(Math.round(max - (range/2)*i), 2, y+3);
+        }
+        let stepX = points.length > 1 ? gW / (points.length - 1) : gW;
+        if(type === 'line') {
+            ctx.strokeStyle = "#5B6E58"; ctx.lineWidth = 1.5; ctx.beginPath();
+            points.forEach((p, i) => {
+                let x = paddingLeft + i*stepX; let y = paddingTop + gH - ((p-min)/range)*gH;
+                if(i === 0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            });
+            ctx.stroke();
+            points.forEach((p, i) => {
+                let x = paddingLeft + i*stepX; let y = paddingTop + gH - ((p-min)/range)*gH;
+                ctx.fillStyle = "#5B6E58"; ctx.beginPath(); ctx.arc(x,y,2.5,0,2*Math.PI); ctx.fill();
+                ctx.fillStyle = "#2A2D2B"; ctx.font = "500 7px sans-serif"; ctx.fillText(p, x-4, y-6);
+                if(labels[i]) ctx.fillText(labels[i], x-6, h-2);
+            });
+        } else {
+            let barW = Math.max(6, (gW / points.length) * 0.4); let barStep = gW / points.length;
+            points.forEach((p, i) => {
+                let x = paddingLeft + i*barStep + (barStep-barW)/2; let barH = ((p-min)/range)*gH; let y = paddingTop + gH - barH;
+                ctx.fillStyle = "#5B6E58"; ctx.fillRect(x, y, barW, Math.max(barH, 2));
+                ctx.fillStyle = "#2A2D2B"; ctx.font = "500 7px sans-serif"; ctx.fillText(p, x+barW/2-4, y-4);
+                if(labels[i]) ctx.fillText(labels[i], x+barW/2-6, h-2);
+            });
+        }
+    }
+
+    function filterByDays(logs, dateField, daysSetting) {
+        if(daysSetting === 'all') return logs;
+        let cutoff = Date.now() - daysSetting*24*60*60*1000;
+        return logs.filter(l => {
+            let parts = l[dateField].split('-');
+            let ts = new Date(parts[0], parts[1]-1, parts[2]).getTime();
+            return ts >= cutoff;
+        });
+    }
+
+    function renderWeightChart() {
+        let r = getCleanCtx('chartWeight'); if(!r) return;
+        let mapped = dbState.weight_logs.map(l => ({ date: l.date, weight: l.weight }));
+        let filtered = filterByDays(mapped, 'date', chartFilters.weight);
+        drawNativeChart(r.ctx, r.w, r.h, filtered.map(f=>f.weight), filtered.map(f=>f.date.split('-')[2]+"/"+f.date.split('-')[1]), dbState.global_chart_type);
+    }
+
+    function renderCalorieChart() {
+        let r = getCleanCtx('chartCalorie'); if(!r) return;
+        let data = [];
+        Object.keys(dbState.dates).sort().forEach(k => {
+            let sum = (dbState.dates[k].foods || []).reduce((acc, f) => acc + f.cal, 0);
+            data.push({ date: k, val: sum });
+        });
+        let filtered = filterByDays(data, 'date', chartFilters.cal);
+        drawNativeChart(r.ctx, r.w, r.h, filtered.map(f=>f.val), filtered.map(f=>f.date.split('-')[2]+"/"+f.date.split('-')[1]), dbState.global_chart_type);
+    }
+
+    function renderCardioChart() {
+        let r = getCleanCtx('chartCardio'); if(!r) return;
+        let data = [];
+        Object.keys(dbState.dates).sort().forEach(k => {
+            let min = parseInt(dbState.dates[k].cardio?.min) || 0;
+            data.push({ date: k, val: min });
+        });
+        let filtered = filterByDays(data, 'date', chartFilters.cardio);
+        drawNativeChart(r.ctx, r.w, r.h, filtered.map(f=>f.val), filtered.map(f=>f.date.split('-')[2]+"/"+f.date.split('-')[1]), dbState.global_chart_type);
+    }
+
+    function renderExercisePerformanceChart() {
+        let r = getCleanCtx('chartExercise'); if(!r || !document.getElementById('exerciseChartSelect').value) return;
+        const target = document.getElementById('exerciseChartSelect').value;
+        let data = [];
+        Object.keys(dbState.dates).forEach(k => {
+            if(dbState.dates[k].exercises?.[target]) {
+                let vol = dbState.dates[k].exercises[target].sets.reduce((acc, s) => (s.type === 'Ana Set' && s.w && s.r) ? acc + (s.w*s.r) : acc, 0);
+                if(vol > 0) data.push({ date: k, val: vol });
+            }
+        });
+        data.sort((a,b) => {
+            let pA = a.date.split('-'), pB = b.date.split('-');
+            return new Date(pA[0],pA[1]-1,pA[2]).getTime() - new Date(pB[0],pB[1]-1,pB[2]).getTime();
+        });
+        let filtered = filterByDays(data, 'date', chartFilters.ex);
+        drawNativeChart(r.ctx, r.w, r.h, filtered.map(f=>f.val), filtered.map(f=>f.date.split('-')[2]+"/"+f.date.split('-')[1]), dbState.global_chart_type);
+    }
+
+    function renderDeepWorkCharts() {
+        let r1 = getCleanCtx('chartDWDistribution'); let r2 = getCleanCtx('chartDWCumulative'); if(!r1 || !r2) return;
+        const topic = document.getElementById('dwChartTopicSelect').value;
+        let logsMapped = dbState.dw_logs.filter(l => (topic === 'all' || l.topic === topic));
+        let filtered = filterByDays(logsMapped, 'date', chartFilters.dw).sort((a,b) => a.timestamp - b.timestamp);
+        
+        drawNativeChart(r1.ctx, r1.w, r1.h, filtered.map(f=>f.minutes), filtered.map(f=>f.date.split('-')[2]+"/"+f.date.split('-')[1]), dbState.global_chart_type);
+        let sum = 0; let cumPts = filtered.map(f => { sum += f.minutes; return sum; });
+        drawNativeChart(r2.ctx, r2.w, r2.h, cumPts, filtered.map(f=>f.date.split('-')[2]+"/"+f.date.split('-')[1]), 'line');
+    }
+
+    function saveToLocalStorage() { localStorage.setItem('kuras_db_v6', JSON.stringify(dbState)); }
+</script>
+
+</body>
+</html>
